@@ -9,9 +9,9 @@ import { categoryBreakdown, formatCurrency, useFinance } from "@/lib/finance-sto
 export const Route = createFileRoute("/_app/assistant")({
   head: () => ({
     meta: [
-      { title: "AI Assistant — Fernway Finance" },
+      { title: "AI Assistant — piggy 🐷" },
       { name: "description", content: "Ask questions about your spending, savings and budget and get answers grounded in your data." },
-      { property: "og:title", content: "AI Assistant — Fernway Finance" },
+      { property: "og:title", content: "AI Assistant — piggy 🐷" },
       { property: "og:description", content: "Ask your money questions and get plain-English answers." },
     ],
   }),
@@ -99,7 +99,7 @@ function AssistantPage() {
           <Sparkles className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold">AI Assistant</h1>
+          <h1 className="truncate text-2xl font-extrabold">AI Assistant 🤖</h1>
           <p className="truncate text-sm text-muted-foreground">
             Grounded in your live transactions and goals
           </p>

@@ -14,9 +14,9 @@ import { formatCurrency, useFinance } from "@/lib/finance-store";
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({
     meta: [
-      { title: "Profile — Fernway Finance" },
-      { name: "description", content: "Manage your Fernway account details, monthly budget and notification preferences." },
-      { property: "og:title", content: "Profile — Fernway Finance" },
+      { title: "Profile — piggy 🐷" },
+      { name: "description", content: "Manage your piggy account details, monthly budget and notification preferences." },
+      { property: "og:title", content: "Profile — piggy 🐷" },
       { property: "og:description", content: "Manage account details, budget and notifications." },
     ],
   }),
@@ -35,7 +35,7 @@ function ProfilePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold sm:text-3xl">Profile</h1>
+        <h1 className="text-2xl font-extrabold sm:text-3xl">Profile 💫</h1>
         <p className="mt-1 text-sm text-muted-foreground">Account details and preferences</p>
       </div>
 

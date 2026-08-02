@@ -21,6 +21,7 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Sticker } from "@/components/Sticker";
 import {
   categoryBreakdown,
   categoryColors,
@@ -32,9 +33,9 @@ import {
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Fernway Finance" },
+      { title: "Dashboard — piggy 🐷" },
       { name: "description", content: "See your balance, income, spending trends and savings progress at a glance." },
-      { property: "og:title", content: "Dashboard — Fernway Finance" },
+      { property: "og:title", content: "Dashboard — piggy 🐷" },
       { property: "og:description", content: "Balance, spending trends and savings progress at a glance." },
     ],
   }),
@@ -55,9 +56,12 @@ function Dashboard() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold sm:text-3xl">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">July 2026 overview</p>
+      <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-2xl font-bold sm:text-3xl">Your money, at a glance</h1>
+          <p className="mt-1 text-sm text-muted-foreground">July 2026 overview</p>
+        </div>
+        <Sticker emoji="💸" variant="sunshine" size="sm" rotate={-8} className="hidden sm:grid" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

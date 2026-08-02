@@ -20,9 +20,9 @@ import { formatCurrency, useFinance } from "@/lib/finance-store";
 export const Route = createFileRoute("/_app/goals")({
   head: () => ({
     meta: [
-      { title: "Savings Goals — Fernway Finance" },
+      { title: "Savings Goals — piggy 🐷" },
       { name: "description", content: "Create savings goals, track progress and add contributions toward each target." },
-      { property: "og:title", content: "Savings Goals — Fernway Finance" },
+      { property: "og:title", content: "Savings Goals — piggy 🐷" },
       { property: "og:description", content: "Create goals, track progress and add contributions." },
     ],
   }),
@@ -40,7 +40,7 @@ function GoalsPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold sm:text-3xl">Savings Goals</h1>
+          <h1 className="truncate text-2xl font-extrabold sm:text-3xl">Savings Goals 🎯</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {formatCurrency(totals.savings)} saved of {formatCurrency(totalTarget)}
           </p>

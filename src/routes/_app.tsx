@@ -1,10 +1,12 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { Bell } from "lucide-react";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { Bell, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 import { AppSidebar } from "@/components/AppSidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/lib/auth-context";
 import { FinanceProvider, useFinance } from "@/lib/finance-store";
 
 export const Route = createFileRoute("/_app")({
@@ -40,6 +42,26 @@ function Topbar() {
 }
 
 function AppLayout() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate({ to: "/login", replace: true });
+    }
+  }, [loading, user, navigate]);
+
+  // While we check for a session, or while redirecting an unauthenticated
+  // visitor to /login, render nothing but a spinner so protected content
+  // never flashes on screen.
+  if (loading || !user) {
+    return (
+      <div className="grid min-h-screen w-full place-items-center bg-background">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   return (
     <FinanceProvider>
       <SidebarProvider>

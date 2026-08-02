@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -6,7 +6,6 @@ import {
   Sparkles,
   UserRound,
   LogOut,
-  Wallet,
 } from "lucide-react";
 
 import {
@@ -21,6 +20,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/lib/auth-context";
 
 const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -32,16 +32,23 @@ const items = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate({ to: "/login", replace: true });
+  };
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <Link to="/" className="flex items-center gap-2.5">
-          <span className="gradient-mint grid h-9 w-9 shrink-0 place-items-center rounded-xl text-primary-foreground">
-            <Wallet className="h-4.5 w-4.5" />
+          <span className="gradient-mint grid h-9 w-9 shrink-0 place-items-center rounded-full text-lg">
+            🐷
           </span>
           <span className="truncate text-base font-bold tracking-tight group-data-[collapsible=icon]:hidden">
-            Fernway
+            piggy
           </span>
         </Link>
       </SidebarHeader>
@@ -69,11 +76,9 @@ export function AppSidebar() {
       <SidebarFooter className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Sign out">
-              <Link to="/login">
-                <LogOut className="h-4 w-4 shrink-0" />
-                <span>Sign out</span>
-              </Link>
+            <SidebarMenuButton tooltip="Sign out" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span>Sign out</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

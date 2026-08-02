@@ -27,9 +27,9 @@ import { formatCurrency, useFinance } from "@/lib/finance-store";
 export const Route = createFileRoute("/_app/transactions")({
   head: () => ({
     meta: [
-      { title: "Transactions — Fernway Finance" },
+      { title: "Transactions — piggy 🐷" },
       { name: "description", content: "Search, filter and add income and expense transactions across all your categories." },
-      { property: "og:title", content: "Transactions — Fernway Finance" },
+      { property: "og:title", content: "Transactions — piggy 🐷" },
       { property: "og:description", content: "Search, filter and log every income and expense." },
     ],
   }),
@@ -74,7 +74,7 @@ function TransactionsPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold sm:text-3xl">Transactions</h1>
+          <h1 className="truncate text-2xl font-extrabold sm:text-3xl">Transactions 🧾</h1>
           <p className="mt-1 text-sm text-muted-foreground">{filtered.length} records</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
