@@ -246,6 +246,11 @@ function Dashboard() {
               </span>
             </li>
           ))}
+          {transactions.length === 0 && (
+            <li className="px-5 py-10 text-center text-sm text-muted-foreground">
+              No transactions yet — add your first one on the Transactions page. 💸
+            </li>
+          )}
         </ul>
       </div>
     </div>

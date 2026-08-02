@@ -1,13 +1,18 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-export type Transaction = {
-  id: string;
-  date: string;
-  merchant: string;
-  category: string;
-  type: "income" | "expense";
-  amount: number;
-};
+import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
+import {
+  deleteTransaction as deleteTransactionRow,
+  fetchTransactions,
+  insertTransaction,
+  sortTransactions,
+  updateTransaction as updateTransactionRow,
+  type Transaction,
+  type TransactionDraft,
+} from "@/lib/transactions";
+
+export type { Transaction, TransactionDraft };
 
 export type Goal = {
   id: string;
@@ -26,21 +31,6 @@ export type Profile = {
   aiInsights: boolean;
   alerts: boolean;
 };
-
-const seedTransactions: Transaction[] = [
-  { id: "t1", date: "2026-07-30", merchant: "Monthly salary", category: "Income", type: "income", amount: 5400 },
-  { id: "t2", date: "2026-07-29", merchant: "Whole Foods Market", category: "Groceries", type: "expense", amount: 142.35 },
-  { id: "t3", date: "2026-07-28", merchant: "Northline Apartments", category: "Housing", type: "expense", amount: 1850 },
-  { id: "t4", date: "2026-07-27", merchant: "Lyft", category: "Transport", type: "expense", amount: 24.8 },
-  { id: "t5", date: "2026-07-26", merchant: "Freelance design", category: "Income", type: "income", amount: 820 },
-  { id: "t6", date: "2026-07-25", merchant: "Spotify", category: "Subscriptions", type: "expense", amount: 11.99 },
-  { id: "t7", date: "2026-07-24", merchant: "Blue Bottle Coffee", category: "Dining", type: "expense", amount: 18.4 },
-  { id: "t8", date: "2026-07-22", merchant: "Con Edison", category: "Utilities", type: "expense", amount: 96.2 },
-  { id: "t9", date: "2026-07-20", merchant: "Nike Store", category: "Shopping", type: "expense", amount: 210 },
-  { id: "t10", date: "2026-07-18", merchant: "Delta Airlines", category: "Travel", type: "expense", amount: 348.6 },
-  { id: "t11", date: "2026-07-15", merchant: "Trader Joe's", category: "Groceries", type: "expense", amount: 88.15 },
-  { id: "t12", date: "2026-07-12", merchant: "Equinox", category: "Health", type: "expense", amount: 132 },
-];
 
 const seedGoals: Goal[] = [
   { id: "g1", name: "Emergency fund", target: 12000, saved: 8450, deadline: "Dec 2026", emoji: "🛟" },
@@ -68,10 +58,12 @@ export const categoryColors = [
 
 type Store = {
   transactions: Transaction[];
+  transactionsLoading: boolean;
   goals: Goal[];
   profile: Profile;
-  addTransaction: (t: Omit<Transaction, "id">) => void;
-  deleteTransaction: (id: string) => void;
+  addTransaction: (t: TransactionDraft) => Promise<void>;
+  editTransaction: (id: string, patch: Partial<TransactionDraft>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   addGoal: (g: Omit<Goal, "id">) => void;
   contribute: (id: string, amount: number) => void;
   updateProfile: (p: Partial<Profile>) => void;
@@ -81,16 +73,78 @@ type Store = {
 const FinanceContext = createContext<Store | null>(null);
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>(seedTransactions);
+  const { user } = useAuth();
+  const userId = user?.id;
+
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [goals, setGoals] = useState<Goal[]>(seedGoals);
   const [profile, setProfile] = useState<Profile>({
-    name: "Alex Rivera",
-    email: "alex.rivera@example.com",
+    name: user?.user_metadata?.["full_name"] ?? "there",
+    email: user?.email ?? "",
     currency: "USD",
     monthlyBudget: 4500,
     aiInsights: true,
     alerts: true,
   });
+
+  // Keep the display name/email in sync if the auth user changes.
+  useEffect(() => {
+    if (!user) return;
+    setProfile((prev) => ({
+      ...prev,
+      name: (user.user_metadata?.["full_name"] as string | undefined) || prev.name,
+      email: user.email ?? prev.email,
+    }));
+  }, [user]);
+
+  // Load this user's transactions, and keep them live via Supabase Realtime so
+  // the Dashboard updates automatically whenever transactions change —
+  // including from another tab or device.
+  useEffect(() => {
+    if (!userId) {
+      setTransactions([]);
+      setTransactionsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setTransactionsLoading(true);
+
+    fetchTransactions(userId)
+      .then((rows) => {
+        if (cancelled) return;
+        setTransactions(rows);
+      })
+      .catch((err) => {
+        console.error("Failed to load transactions", err);
+      })
+      .finally(() => {
+        if (!cancelled) setTransactionsLoading(false);
+      });
+
+    const channel = supabase
+      .channel(`transactions-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${userId}` },
+        () => {
+          // Re-fetch on any change (insert/update/delete) so every consumer
+          // of this store — dashboard included — re-renders with fresh data.
+          fetchTransactions(userId)
+            .then((rows) => {
+              if (!cancelled) setTransactions(rows);
+            })
+            .catch((err) => console.error("Failed to refresh transactions", err));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   const totals = useMemo(() => {
     const income = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
@@ -101,12 +155,23 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const value: Store = {
     transactions,
+    transactionsLoading,
     goals,
     profile,
     totals,
-    addTransaction: (t) =>
-      setTransactions((prev) => [{ ...t, id: `t${Date.now()}` }, ...prev]),
-    deleteTransaction: (id) => setTransactions((prev) => prev.filter((t) => t.id !== id)),
+    addTransaction: async (draft) => {
+      if (!userId) return;
+      const created = await insertTransaction(userId, draft);
+      setTransactions((prev) => sortTransactions([created, ...prev]));
+    },
+    editTransaction: async (id, patch) => {
+      const updated = await updateTransactionRow(id, patch);
+      setTransactions((prev) => sortTransactions(prev.map((t) => (t.id === id ? updated : t))));
+    },
+    deleteTransaction: async (id) => {
+      await deleteTransactionRow(id);
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
+    },
     addGoal: (g) => setGoals((prev) => [...prev, { ...g, id: `g${Date.now()}` }]),
     contribute: (id, amount) =>
       setGoals((prev) =>
