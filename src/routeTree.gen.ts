@@ -13,8 +13,10 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppGoalsRouteImport } from './routes/_app.goals'
+import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppTransactionsRouteImport } from './routes/_app.transactions'
 
 const IndexRoute = IndexRouteImport.update({
@@ -36,6 +38,11 @@ const RegisterRoute = RegisterRouteImport.update({
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAssistantRoute = AppAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -44,6 +51,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppGoalsRoute = AppGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTransactionsRoute = AppTransactionsRouteImport.update({
@@ -56,16 +68,20 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/assistant': typeof AppAssistantRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/profile': typeof AppProfileRoute
   '/transactions': typeof AppTransactionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/assistant': typeof AppAssistantRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/profile': typeof AppProfileRoute
   '/transactions': typeof AppTransactionsRoute
 }
 export interface FileRoutesById {
@@ -74,24 +90,43 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/_app/assistant': typeof AppAssistantRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/goals': typeof AppGoalsRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/transactions': typeof AppTransactionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/register' | '/dashboard' | '/goals' | '/transactions'
+    | '/'
+    | '/login'
+    | '/register'
+    | '/assistant'
+    | '/dashboard'
+    | '/goals'
+    | '/profile'
+    | '/transactions'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/dashboard' | '/goals' | '/transactions'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/assistant'
+    | '/dashboard'
+    | '/goals'
+    | '/profile'
+    | '/transactions'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/login'
     | '/register'
+    | '/_app/assistant'
     | '/_app/dashboard'
     | '/_app/goals'
+    | '/_app/profile'
     | '/_app/transactions'
   fileRoutesById: FileRoutesById
 }
@@ -132,6 +167,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/assistant': {
+      id: '/_app/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AppAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -146,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/transactions': {
       id: '/_app/transactions'
       path: '/transactions'
@@ -157,14 +206,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAssistantRoute: typeof AppAssistantRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppGoalsRoute: typeof AppGoalsRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAssistantRoute: AppAssistantRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppGoalsRoute: AppGoalsRoute,
+  AppProfileRoute: AppProfileRoute,
   AppTransactionsRoute: AppTransactionsRoute,
 }
 

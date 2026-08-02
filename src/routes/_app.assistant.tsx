@@ -64,7 +64,7 @@ function AssistantPage() {
     }
     if (q.includes("afford")) {
       const match = question.match(/\$?([\d,]+)/);
-      const amt = match ? Number(match[1].replace(/,/g, "")) : 500;
+      const amt = match?.[1] ? Number(match[1].replace(/,/g, "")) : 500;
       const spare = totals.balance;
       return spare > amt
         ? `Yes. After this month's bills you're holding ${formatCurrency(spare)}, so a ${formatCurrency(amt)} spend leaves ${formatCurrency(spare - amt)} untouched — and none of it comes out of your goals.`
