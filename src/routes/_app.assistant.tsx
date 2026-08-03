@@ -24,7 +24,7 @@ const suggestions = [
   "How much did I spend this month?",
   "Where can I cut back?",
   "Am I on track for my goals?",
-  "Can I afford a $900 trip?",
+  "Can I afford a ₹75,000 trip?",
 ];
 
 function AssistantPage() {
@@ -59,11 +59,11 @@ function AssistantPage() {
     if (q.includes("goal") || q.includes("track")) {
       const behind = goals.filter((g) => g.saved / g.target < 0.4).map((g) => g.name);
       return behind.length
-        ? `Three of your goals look healthy, but ${behind.join(" and ")} ${behind.length > 1 ? "are" : "is"} under 40% funded. A standing $150/month transfer would put ${behind.length > 1 ? "them" : "it"} back on pace.`
+        ? `Three of your goals look healthy, but ${behind.join(" and ")} ${behind.length > 1 ? "are" : "is"} under 40% funded. A standing ₹12,000/month transfer would put ${behind.length > 1 ? "them" : "it"} back on pace.`
         : `Every goal is above 40% funded. Keep your current pace and you'll hit all of them ahead of schedule.`;
     }
     if (q.includes("afford")) {
-      const match = question.match(/\$?([\d,]+)/);
+      const match = question.match(/₹?\$?([\d,]+)/);
       const amt = match?.[1] ? Number(match[1].replace(/,/g, "")) : 500;
       const spare = totals.balance;
       return spare > amt

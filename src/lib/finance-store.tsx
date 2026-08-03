@@ -33,19 +33,10 @@ export type Profile = {
 };
 
 const seedGoals: Goal[] = [
-  { id: "g1", name: "Emergency fund", target: 12000, saved: 8450, deadline: "Dec 2026", emoji: "🛟" },
-  { id: "g2", name: "Japan trip", target: 5000, saved: 2150, deadline: "Apr 2027", emoji: "🗼" },
-  { id: "g3", name: "New laptop", target: 2600, saved: 1980, deadline: "Oct 2026", emoji: "💻" },
-  { id: "g4", name: "Down payment", target: 45000, saved: 9600, deadline: "Jun 2029", emoji: "🏡" },
-];
-
-export const monthlyTrend = [
-  { month: "Feb", income: 5600, expenses: 3980 },
-  { month: "Mar", income: 5900, expenses: 4310 },
-  { month: "Apr", income: 5750, expenses: 3720 },
-  { month: "May", income: 6200, expenses: 4480 },
-  { month: "Jun", income: 6050, expenses: 3890 },
-  { month: "Jul", income: 6220, expenses: 4102 },
+  { id: "g1", name: "Emergency fund", target: 300000, saved: 210000, deadline: "Dec 2026", emoji: "🛟" },
+  { id: "g2", name: "Japan trip", target: 150000, saved: 65000, deadline: "Apr 2027", emoji: "🗼" },
+  { id: "g3", name: "New laptop", target: 90000, saved: 68000, deadline: "Oct 2026", emoji: "💻" },
+  { id: "g4", name: "Down payment", target: 1500000, saved: 320000, deadline: "Jun 2029", emoji: "🏡" },
 ];
 
 export const categoryColors = [
@@ -67,7 +58,15 @@ type Store = {
   addGoal: (g: Omit<Goal, "id">) => void;
   contribute: (id: string, amount: number) => void;
   updateProfile: (p: Partial<Profile>) => void;
-  totals: { income: number; expenses: number; balance: number; savings: number };
+  totals: {
+    income: number;
+    expenses: number;
+    balance: number;
+    savings: number;
+    monthlyIncome: number;
+    monthlyExpenses: number;
+    monthlySavings: number;
+  };
 };
 
 const FinanceContext = createContext<Store | null>(null);
@@ -82,8 +81,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile>({
     name: user?.user_metadata?.["full_name"] ?? "there",
     email: user?.email ?? "",
-    currency: "USD",
-    monthlyBudget: 4500,
+    currency: "INR",
+    monthlyBudget: 45000,
     aiInsights: true,
     alerts: true,
   });
@@ -150,7 +149,21 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     const income = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
     const expenses = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
     const savings = goals.reduce((s, g) => s + g.saved, 0);
-    return { income, expenses, balance: income - expenses, savings };
+
+    const currentMonthKey = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    const thisMonth = transactions.filter((t) => t.date.slice(0, 7) === currentMonthKey);
+    const monthlyIncome = thisMonth.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const monthlyExpenses = thisMonth.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+
+    return {
+      income,
+      expenses,
+      balance: income - expenses,
+      savings,
+      monthlyIncome,
+      monthlyExpenses,
+      monthlySavings: monthlyIncome - monthlyExpenses,
+    };
   }, [transactions, goals]);
 
   const value: Store = {
@@ -190,11 +203,39 @@ export function useFinance() {
 }
 
 export function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
     maximumFractionDigits: value % 1 === 0 ? 0 : 2,
   }).format(value);
+}
+
+/**
+ * Buckets transactions into the last `months` calendar months (oldest
+ * first), summing income/expenses per month. Months with no transactions
+ * still appear with zero values, so charts always have a consistent shape.
+ */
+export function monthlySeries(transactions: Transaction[], months = 6) {
+  const now = new Date();
+  const buckets = Array.from({ length: months }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+    return {
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      month: d.toLocaleDateString("en-US", { month: "short" }),
+      income: 0,
+      expenses: 0,
+    };
+  });
+
+  const byKey = new Map(buckets.map((b) => [b.key, b]));
+  for (const t of transactions) {
+    const bucket = byKey.get(t.date.slice(0, 7));
+    if (!bucket) continue; // outside the window shown
+    if (t.type === "income") bucket.income += t.amount;
+    else bucket.expenses += t.amount;
+  }
+
+  return buckets.map(({ key: _key, ...rest }) => rest);
 }
 
 export function categoryBreakdown(transactions: Transaction[]) {

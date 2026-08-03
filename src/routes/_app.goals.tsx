@@ -160,7 +160,7 @@ function GoalsPage() {
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                {[50, 100, 250].map((amt) => (
+                {[1000, 5000, 10000].map((amt) => (
                   <Button
                     key={amt}
                     variant="secondary"
@@ -186,7 +186,7 @@ function GoalsPage() {
         </span>
         <p className="text-sm text-muted-foreground">
           <span className="font-semibold text-foreground">AI suggestion: </span>
-          At your current pace you'll finish the emergency fund in 9 months. Redirecting the $132
+          At your current pace you'll finish the emergency fund in 9 months. Redirecting the ₹11,000
           gym charge you haven't used since May would shave 5 weeks off that.
         </p>
       </div>
