@@ -1,6 +1,14 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { useAuth } from "@/lib/auth-context";
+import {
+  deleteGoal as deleteGoalRow,
+  fetchGoals,
+  insertGoal,
+  updateGoal as updateGoalRow,
+  type Goal,
+  type GoalDraft,
+} from "@/lib/goals";
 import { supabase } from "@/lib/supabase";
 import {
   deleteTransaction as deleteTransactionRow,
@@ -12,16 +20,7 @@ import {
   type TransactionDraft,
 } from "@/lib/transactions";
 
-export type { Transaction, TransactionDraft };
-
-export type Goal = {
-  id: string;
-  name: string;
-  target: number;
-  saved: number;
-  deadline: string;
-  emoji: string;
-};
+export type { Transaction, TransactionDraft, Goal, GoalDraft };
 
 export type Profile = {
   name: string;
@@ -31,13 +30,6 @@ export type Profile = {
   aiInsights: boolean;
   alerts: boolean;
 };
-
-const seedGoals: Goal[] = [
-  { id: "g1", name: "Emergency fund", target: 300000, saved: 210000, deadline: "Dec 2026", emoji: "🛟" },
-  { id: "g2", name: "Japan trip", target: 150000, saved: 65000, deadline: "Apr 2027", emoji: "🗼" },
-  { id: "g3", name: "New laptop", target: 90000, saved: 68000, deadline: "Oct 2026", emoji: "💻" },
-  { id: "g4", name: "Down payment", target: 1500000, saved: 320000, deadline: "Jun 2029", emoji: "🏡" },
-];
 
 export const categoryColors = [
   "var(--color-chart-1)",
@@ -51,12 +43,15 @@ type Store = {
   transactions: Transaction[];
   transactionsLoading: boolean;
   goals: Goal[];
+  goalsLoading: boolean;
   profile: Profile;
   addTransaction: (t: TransactionDraft) => Promise<void>;
   editTransaction: (id: string, patch: Partial<TransactionDraft>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
-  addGoal: (g: Omit<Goal, "id">) => void;
-  contribute: (id: string, amount: number) => void;
+  addGoal: (g: GoalDraft) => Promise<void>;
+  editGoal: (id: string, patch: Partial<GoalDraft>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
+  contribute: (id: string, amount: number) => Promise<void>;
   updateProfile: (p: Partial<Profile>) => void;
   totals: {
     income: number;
@@ -77,7 +72,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(true);
-  const [goals, setGoals] = useState<Goal[]>(seedGoals);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
   const [profile, setProfile] = useState<Profile>({
     name: user?.user_metadata?.["full_name"] ?? "there",
     email: user?.email ?? "",
@@ -145,6 +141,50 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     };
   }, [userId]);
 
+  // Same pattern as transactions: load this user's goals and keep them live
+  // via Supabase Realtime.
+  useEffect(() => {
+    if (!userId) {
+      setGoals([]);
+      setGoalsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setGoalsLoading(true);
+
+    fetchGoals(userId)
+      .then((rows) => {
+        if (!cancelled) setGoals(rows);
+      })
+      .catch((err) => {
+        console.error("Failed to load goals", err);
+      })
+      .finally(() => {
+        if (!cancelled) setGoalsLoading(false);
+      });
+
+    const channel = supabase
+      .channel(`savings-goals-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "savings_goals", filter: `user_id=eq.${userId}` },
+        () => {
+          fetchGoals(userId)
+            .then((rows) => {
+              if (!cancelled) setGoals(rows);
+            })
+            .catch((err) => console.error("Failed to refresh goals", err));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   const totals = useMemo(() => {
     const income = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
     const expenses = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
@@ -170,6 +210,7 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     transactions,
     transactionsLoading,
     goals,
+    goalsLoading,
     profile,
     totals,
     addTransaction: async (draft) => {
@@ -185,11 +226,25 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       await deleteTransactionRow(id);
       setTransactions((prev) => prev.filter((t) => t.id !== id));
     },
-    addGoal: (g) => setGoals((prev) => [...prev, { ...g, id: `g${Date.now()}` }]),
-    contribute: (id, amount) =>
-      setGoals((prev) =>
-        prev.map((g) => (g.id === id ? { ...g, saved: Math.min(g.target, g.saved + amount) } : g)),
-      ),
+    addGoal: async (draft) => {
+      if (!userId) return;
+      const created = await insertGoal(userId, draft);
+      setGoals((prev) => [...prev, created]);
+    },
+    editGoal: async (id, patch) => {
+      const updated = await updateGoalRow(id, patch);
+      setGoals((prev) => prev.map((g) => (g.id === id ? updated : g)));
+    },
+    deleteGoal: async (id) => {
+      await deleteGoalRow(id);
+      setGoals((prev) => prev.filter((g) => g.id !== id));
+    },
+    contribute: async (id, amount) => {
+      const current = goals.find((g) => g.id === id);
+      if (!current) return;
+      const updated = await updateGoalRow(id, { saved: Math.min(current.target, current.saved + amount) });
+      setGoals((prev) => prev.map((g) => (g.id === id ? updated : g)));
+    },
     updateProfile: (p) => setProfile((prev) => ({ ...prev, ...p })),
   };
 

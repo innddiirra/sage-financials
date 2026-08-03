@@ -252,7 +252,7 @@ function Dashboard() {
           <h2 className="text-base font-bold">Goal progress</h2>
           <ul className="mt-4 space-y-4">
             {goals.slice(0, 3).map((g) => {
-              const pct = Math.round((g.saved / g.target) * 100);
+              const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
               return (
                 <li key={g.id}>
                   <div className="flex items-center justify-between gap-3 text-sm">
@@ -265,6 +265,11 @@ function Dashboard() {
                 </li>
               );
             })}
+            {goals.length === 0 && (
+              <li className="py-4 text-center text-sm text-muted-foreground">
+                No goals yet — create one on the Savings Goals page. 🎯
+              </li>
+            )}
           </ul>
         </div>
       </div>
