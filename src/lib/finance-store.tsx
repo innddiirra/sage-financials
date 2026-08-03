@@ -19,14 +19,24 @@ import {
   type Transaction,
   type TransactionDraft,
 } from "@/lib/transactions";
+import {
+  deleteWishlistItem as deleteWishlistItemRow,
+  fetchWishlistItems,
+  insertWishlistItem,
+  updateWishlistItem as updateWishlistItemRow,
+  type WishlistDraft,
+  type WishlistItem,
+} from "@/lib/wishlist";
 
-export type { Transaction, TransactionDraft, Goal, GoalDraft };
+export type { Transaction, TransactionDraft, Goal, GoalDraft, WishlistItem, WishlistDraft };
 
 export type Profile = {
   name: string;
   email: string;
   currency: string;
   monthlyBudget: number;
+  /** Percentage of spare cash reserved for groceries before wishlist spending — 10 or 15. */
+  groceryReservePercent: number;
   aiInsights: boolean;
   alerts: boolean;
 };
@@ -44,6 +54,8 @@ type Store = {
   transactionsLoading: boolean;
   goals: Goal[];
   goalsLoading: boolean;
+  wishlist: WishlistItem[];
+  wishlistLoading: boolean;
   profile: Profile;
   addTransaction: (t: TransactionDraft) => Promise<void>;
   editTransaction: (id: string, patch: Partial<TransactionDraft>) => Promise<void>;
@@ -52,6 +64,11 @@ type Store = {
   editGoal: (id: string, patch: Partial<GoalDraft>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   contribute: (id: string, amount: number) => Promise<void>;
+  addWishlistItem: (w: WishlistDraft) => Promise<void>;
+  editWishlistItem: (id: string, patch: Partial<WishlistDraft>) => Promise<void>;
+  deleteWishlistItem: (id: string) => Promise<void>;
+  /** Creates a savings goal for this item (target = its cost) and removes it from the wishlist. */
+  moveWishlistItemToGoal: (id: string) => Promise<void>;
   updateProfile: (p: Partial<Profile>) => void;
   totals: {
     income: number;
@@ -74,11 +91,14 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
   const [transactionsLoading, setTransactionsLoading] = useState(true);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(true);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
   const [profile, setProfile] = useState<Profile>({
     name: user?.user_metadata?.["full_name"] ?? "there",
     email: user?.email ?? "",
     currency: "INR",
     monthlyBudget: 45000,
+    groceryReservePercent: 15,
     aiInsights: true,
     alerts: true,
   });
@@ -185,6 +205,49 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     };
   }, [userId]);
 
+  // Same pattern again: load this user's wishlist and keep it live via Realtime.
+  useEffect(() => {
+    if (!userId) {
+      setWishlist([]);
+      setWishlistLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setWishlistLoading(true);
+
+    fetchWishlistItems(userId)
+      .then((rows) => {
+        if (!cancelled) setWishlist(rows);
+      })
+      .catch((err) => {
+        console.error("Failed to load wishlist", err);
+      })
+      .finally(() => {
+        if (!cancelled) setWishlistLoading(false);
+      });
+
+    const channel = supabase
+      .channel(`wishlist-items-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wishlist_items", filter: `user_id=eq.${userId}` },
+        () => {
+          fetchWishlistItems(userId)
+            .then((rows) => {
+              if (!cancelled) setWishlist(rows);
+            })
+            .catch((err) => console.error("Failed to refresh wishlist", err));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   const totals = useMemo(() => {
     const income = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
     const expenses = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
@@ -211,6 +274,8 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
     transactionsLoading,
     goals,
     goalsLoading,
+    wishlist,
+    wishlistLoading,
     profile,
     totals,
     addTransaction: async (draft) => {
@@ -244,6 +309,34 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       if (!current) return;
       const updated = await updateGoalRow(id, { saved: Math.min(current.target, current.saved + amount) });
       setGoals((prev) => prev.map((g) => (g.id === id ? updated : g)));
+    },
+    addWishlistItem: async (draft) => {
+      if (!userId) return;
+      const created = await insertWishlistItem(userId, draft);
+      setWishlist((prev) => [...prev, created].sort((a, b) => a.cost - b.cost));
+    },
+    editWishlistItem: async (id, patch) => {
+      const updated = await updateWishlistItemRow(id, patch);
+      setWishlist((prev) => prev.map((w) => (w.id === id ? updated : w)).sort((a, b) => a.cost - b.cost));
+    },
+    deleteWishlistItem: async (id) => {
+      await deleteWishlistItemRow(id);
+      setWishlist((prev) => prev.filter((w) => w.id !== id));
+    },
+    moveWishlistItemToGoal: async (id) => {
+      if (!userId) return;
+      const item = wishlist.find((w) => w.id === id);
+      if (!item) return;
+      const goal = await insertGoal(userId, {
+        name: item.name,
+        target: item.cost,
+        saved: 0,
+        deadline: "",
+        emoji: "🎁",
+      });
+      await deleteWishlistItemRow(id);
+      setGoals((prev) => [...prev, goal]);
+      setWishlist((prev) => prev.filter((w) => w.id !== id));
     },
     updateProfile: (p) => setProfile((prev) => ({ ...prev, ...p })),
   };

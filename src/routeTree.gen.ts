@@ -20,6 +20,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppGoalsRouteImport } from './routes/_app.goals'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppTransactionsRouteImport } from './routes/_app.transactions'
+import { Route as AppWishlistRouteImport } from './routes/_app.wishlist'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -75,6 +76,11 @@ const AppTransactionsRoute = AppTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWishlistRoute = AppWishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof AppGoalsRoute
   '/profile': typeof AppProfileRoute
   '/transactions': typeof AppTransactionsRoute
+  '/wishlist': typeof AppWishlistRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/goals': typeof AppGoalsRoute
   '/profile': typeof AppProfileRoute
   '/transactions': typeof AppTransactionsRoute
+  '/wishlist': typeof AppWishlistRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_app/goals': typeof AppGoalsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/transactions': typeof AppTransactionsRoute
+  '/_app/wishlist': typeof AppWishlistRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/profile'
     | '/transactions'
+    | '/wishlist'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/profile'
     | '/transactions'
+    | '/wishlist'
   id:
     | '__root__'
     | '/'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_app/goals'
     | '/_app/profile'
     | '/_app/transactions'
+    | '/_app/wishlist'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -242,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransactionsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/wishlist': {
+      id: '/_app/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof AppWishlistRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -251,6 +270,7 @@ interface AppRouteChildren {
   AppGoalsRoute: typeof AppGoalsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
+  AppWishlistRoute: typeof AppWishlistRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -259,6 +279,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppGoalsRoute: AppGoalsRoute,
   AppProfileRoute: AppProfileRoute,
   AppTransactionsRoute: AppTransactionsRoute,
+  AppWishlistRoute: AppWishlistRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   Target,
+  Gift,
   Sparkles,
   UserRound,
   LogOut,
@@ -26,6 +27,7 @@ const items = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Transactions", url: "/transactions", icon: ArrowLeftRight },
   { title: "Savings Goals", url: "/goals", icon: Target },
+  { title: "Wishlist", url: "/wishlist", icon: Gift },
   { title: "AI Assistant", url: "/assistant", icon: Sparkles },
   { title: "Profile", url: "/profile", icon: UserRound },
 ] as const;
