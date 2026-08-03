@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
@@ -109,10 +108,6 @@ function RegisterPage() {
             autoComplete="new-password"
           />
         </div>
-        <label className="flex items-start gap-2 text-sm text-muted-foreground">
-          <Checkbox required className="mt-0.5" />
-          <span>I agree to the terms of service and privacy policy.</span>
-        </label>
         <Button type="submit" className="w-full rounded-full" size="lg" disabled={submitting}>
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create account"}
         </Button>

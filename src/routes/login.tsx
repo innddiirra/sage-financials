@@ -129,11 +129,11 @@ export function AuthShell({
         </Link>
         <div>
           <p className="text-3xl leading-snug font-bold">
-            “I finally know where my money goes — and it doesn't feel like homework.”
+            My money, tracked my way. No spreadsheets, no guessing. 🐷
           </p>
-          <p className="mt-4 text-ink-foreground/70">Priya N., using piggy since 2025</p>
+          <p className="mt-4 text-ink-foreground/70">Just for me, not for the world.</p>
         </div>
-        <p className="text-sm text-ink-foreground/60">Bank-grade encryption · Read-only access</p>
+        <p className="text-sm text-ink-foreground/60">Just my own data, in my own Supabase project.</p>
       </div>
 
       <div className="relative flex items-center justify-center px-4 py-14 sm:px-8">

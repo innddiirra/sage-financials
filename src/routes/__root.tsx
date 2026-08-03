@@ -79,10 +79,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "piggy 🐷 — money tracking that's actually cute" },
+      { title: "piggy 🐷" },
       {
         name: "description",
-        content: "Track spending, hit savings goals, and get AI money advice — no cap, no boring spreadsheets.",
+        content: "My personal spending tracker.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
